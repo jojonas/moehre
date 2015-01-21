@@ -6,6 +6,7 @@ import functools
 from PyQt5 import QtOpenGL, QtGui, QtCore, QtWidgets, Qt
 from OpenGL.GL import *
 from OpenGL.GLU import *
+from synth import *
 	
 def glCircle(x,y, radius, segments=10):
 	glBegin(GL_TRIANGLE_FAN)
@@ -47,7 +48,9 @@ class FlowNode(QtCore.QObject, Draggable):
 		self.w = self.h*1.618 #goldener schnitt!
 		
 		self.knobs = []
-		self.knobs.append(FlowKnob(self, FlowKnob.knobTypeOutput, "Output"))
+		
+		if func not in self.parent().outputs:
+			self.knobs.append(FlowKnob(self, FlowKnob.knobTypeOutput, "Output"))
 		
 		self.properties = OrderedDict()
 		
@@ -56,16 +59,16 @@ class FlowNode(QtCore.QObject, Draggable):
 		for parameter in signature.parameters.values():
 			if parameter.annotation == inspect.Parameter.empty: # data
 				# -1 because the first one is the output knob
-				knob = FlowKnob(self, FlowKnob.knobTypeInput, parameter.name, len(self.knobs)-1) 
+				knob = FlowKnob(self, FlowKnob.knobTypeInput, parameter.name, self.getInputKnobCount()) 
 				self.knobs.append(knob)
 			else:
 				self.properties[parameter.name] = (parameter.annotation, parameter.default)		
+				
+	def getInputKnobCount(self):
+		return len(list(filter(lambda x : x.type == FlowKnob.knobTypeInput, self.knobs)))
 
 	def draw(self, selected=False):
 		palette = self.parent().palette()
-		
-		qglColor(palette.color(QtGui.QPalette.Shadow))
-		glCircle(self.x+self.w, self.y+self.h/2, 5)
 		
 		qglColor(palette.color(QtGui.QPalette.Shadow))
 		
@@ -157,7 +160,7 @@ class FlowKnob(QtCore.QObject, Draggable):
 		
 	def getPosition(self): # relative to node coordinates
 		if self.type == self.knobTypeInput:
-			dist = self.node.h / (len(self.node.knobs)-1+1) # -1 because of output know, +1 because of spacing
+			dist = self.node.h / (self.node.getInputKnobCount()+1)
 			return self.node.x, self.node.y + (self.index+1)*dist
 		elif self.type == self.knobTypeOutput:
 			return self.node.x + self.node.w, self.node.y + self.node.h/2
@@ -215,17 +218,20 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 		def draw(self):
 			self.draggable.drawDrag(self)
 	
-	def __init__(self, parent=None, functions=None):
+	def __init__(self, parent=None, *, outputs=(), functions=()):
 		QtOpenGL.QGLWidget.__init__(self, parent)
 		if not self.isValid():
 			raise OSError("OpenGL not supported.")
 			
 		self.functions = functions
+		self.outputs = outputs
 		self.nodes = []
 		self.connections = []
 		
 		self.dragObject = None
 		self.selectedNode = None
+		
+		self.addNode(Output, 50, 50) # outputDummy should be a static function in the synthesizer
 		
 		
 	def initializeGL(self):
@@ -311,9 +317,10 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 		menu = QtWidgets.QMenu(parent=self.parent())
 		#menu.setTearOffEnabled(True)
 		for i, func in enumerate(self.functions):
-			action = menu.addAction(func.__name__)
-			x,y = event.x(), event.y()
-			action.triggered.connect(functools.partial(self.addNode, func, x, y)) # lambda does not work in this case!!
+			if func not in self.outputs:
+				action = menu.addAction(func.__name__)
+				x,y = event.x(), event.y()
+				action.triggered.connect(functools.partial(self.addNode, func, x, y)) # lambda does not work in this case!!
 		menu.popup(event.globalPos())
 			
 	def mouseReleaseEvent(self, event):

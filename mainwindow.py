@@ -4,22 +4,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui, uic
 from decorators import *
 from glfloweditor import *
 from propertyeditor import *
-
-@registerFunction
-def foo(data, x, y:int=0):
-	print("Bar", x)
-	
-@registerFunction
-def bar(koko, loo, aa, pepe:str="popo", nana:int=0):
-	pass
-	
-@registerFunction
-def bar2(koko, loo, aa, pepe:str="popo", nana:int=0):
-	pass
-	
-@registerFunction
-def bar3(koko, loo, aa, pepe:str="popo", nana:int=0):
-	pass
+from synth import *
 
 form, base = uic.loadUiType("mainwindow.ui")
 class MainWindow(form,base):
@@ -35,7 +20,7 @@ class MainWindow(form,base):
 		self.tableProperties = PropertyWidget(parent=self)
 		self.layoutDockProperty.layout().addWidget(self.tableProperties)
 		
-		self.glFlowEditor = GLFlowEditor(parent=self, functions=getRegisteredFunctions())
+		self.glFlowEditor = GLFlowEditor(parent=self, functions=getRegisteredFunctions(), outputs=getRegisteredOutputFunctions())
 		self.glFlowEditor.signalEditNode.connect(self.tableProperties.loadProperties)
 		
 		self.setCentralWidget(self.glFlowEditor)
