@@ -20,7 +20,7 @@ class MainWindow(form,base):
 		self.tableProperties = PropertyWidget(parent=self)
 		self.layoutDockProperty.layout().addWidget(self.tableProperties)
 		
-		self.glFlowEditor = GLFlowEditor(parent=self, functions=getRegisteredFunctions(), outputs=getRegisteredOutputFunctions())
+		self.glFlowEditor = GLFlowEditor(parent=self, functions=getRegisteredFunctions(), outputFunctions=getRegisteredOutputFunctions())
 		self.glFlowEditor.signalEditNode.connect(self.tableProperties.loadProperties)
 		
 		self.setCentralWidget(self.glFlowEditor)

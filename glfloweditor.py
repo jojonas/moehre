@@ -46,10 +46,11 @@ class FlowNode(QtCore.QObject, Draggable):
 		self.y = 20
 		self.h = 70
 		self.w = self.h*1.618 #goldener schnitt!
+		self.func = func
 		
 		self.knobs = []
 		
-		if func not in self.parent().outputs:
+		if func not in self.parent().outputFunctions:
 			self.knobs.append(FlowKnob(self, FlowKnob.knobTypeOutput, "Output"))
 		
 		self.properties = OrderedDict()
@@ -57,10 +58,12 @@ class FlowNode(QtCore.QObject, Draggable):
 		self.title = func.__name__
 		signature = inspect.signature(func)
 		for parameter in signature.parameters.values():
-			if parameter.annotation == inspect.Parameter.empty: # data
+			if parameter.annotation == SynthBuffer: # data
 				# -1 because the first one is the output knob
-				knob = FlowKnob(self, FlowKnob.knobTypeInput, parameter.name, self.getInputKnobCount()) 
+				knob = FlowKnob(self, FlowKnob.knobTypeInput, parameter.name, self.getInputKnobCount())
 				self.knobs.append(knob)
+			elif parameter.annotation == SynthParameters:
+				pass
 			else:
 				self.properties[parameter.name] = (parameter.annotation, parameter.default)		
 				
@@ -153,6 +156,7 @@ class FlowKnob(QtCore.QObject, Draggable):
 		self.node = node
 		self.type = type
 		self.index = index
+		self.name = name
 		
 	def draw(self):
 		x,y = self.getPosition()
@@ -218,13 +222,13 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 		def draw(self):
 			self.draggable.drawDrag(self)
 	
-	def __init__(self, parent=None, *, outputs=(), functions=()):
+	def __init__(self, parent=None, *, outputFunctions=(), functions=()):
 		QtOpenGL.QGLWidget.__init__(self, parent)
 		if not self.isValid():
 			raise OSError("OpenGL not supported.")
 			
 		self.functions = functions
-		self.outputs = outputs
+		self.outputFunctions = outputFunctions
 		self.nodes = []
 		self.connections = []
 		
@@ -317,7 +321,7 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 		menu = QtWidgets.QMenu(parent=self.parent())
 		#menu.setTearOffEnabled(True)
 		for i, func in enumerate(self.functions):
-			if func not in self.outputs:
+			if func not in self.outputFunctions:
 				action = menu.addAction(func.__name__)
 				x,y = event.x(), event.y()
 				action.triggered.connect(functools.partial(self.addNode, func, x, y)) # lambda does not work in this case!!
