@@ -234,7 +234,7 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 		self.dragObject = None
 		self.selectedNode = None
 		
-		self.addNode(Output, 50, 50) # outputDummy should be a static function in the synthesizer
+		self.addNode(Output, 600, 300) # outputDummy should be a static function in the synthesizer
 		
 		
 	def initializeGL(self):
