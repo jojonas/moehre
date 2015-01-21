@@ -4,6 +4,7 @@ from scipy.interpolate import interp1d
 import numpy as np
 
 from decorators import *
+import audio
 		
 class SynthParameters:
 	def __init__(self, rate, length):
@@ -78,5 +79,5 @@ class Synthesizer:
 		xScaled = np.linspace(0, self.synthParameters.length, self.synthParameters.samples * self.playbackSpeedFactor)
 		interpolator = interp1d(xUnscaled, self.soundBuffer)
 		playbackBuffer = interpolator(xScaled)
-		# play self.soundBuffer
+		audio.play(playbackBuffer)
 		pass

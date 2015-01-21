@@ -9,6 +9,7 @@ from propertyeditor import *
 from synth import *
 
 from nodes import *
+import audio
 
 form, base = uic.loadUiType("mainwindow.ui")
 class MainWindow(form,base):
@@ -35,6 +36,7 @@ class MainWindow(form,base):
 		self.setCentralWidget(self.glFlowEditor)
 		
 		self.synthesizer = Synthesizer()
+		audio.reinitAudio(44100)
 		
 	def play(self):
 		self.synthesizer.play(self.glFlowEditor)
