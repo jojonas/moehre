@@ -13,8 +13,6 @@ def registerFunction(func):
 			raise ValueError("Cannot wrap argument lists of function %s(...)" % func.__name__)
 		elif parameter.annotation != inspect.Parameter.empty and parameter.default == inspect.Parameter.empty:
 			raise ValueError("Non data parameters must have default values.")
-		elif parameter.annotation == inspect.Parameter.empty and parameter.default != inspect.Parameter.empty:
-			raise ValueError("Data parameters may not have default values.")
 	return func
 
 def registerOutputFunction(func):
