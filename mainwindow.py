@@ -45,9 +45,13 @@ class MainWindow(form,base):
 		fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save to file", filter="wave files (*.wav *.wave);;All files (*.*)")
 		if fileName:
 			self.synthesizer.saveToFile(self.glFlowEditor, fileName)
+			self.statusBar.showMessage("Export complete.")
 		
 	def handleError(self, shortMessage, longMessage):
 		self.statusBar.showMessage(shortMessage)
+		
+	def keyPressEvent(self, event):
+		self.glFlowEditor.keyPressEvent(event)
 		
 class QtLoggingHandler(QtCore.QObject):
 	signalHandleError = QtCore.pyqtSignal([str, str])
