@@ -346,7 +346,6 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 				if self.selectedNode.isOutput():
 					QtWidgets.QMessageBox.warning(self.parent(), "Delete Node", "Cannot delete output node.", QtWidgets.QMessageBox.Ok)
 				elif QtWidgets.QMessageBox.question(self.parent(), "Delete Node", "Do you really want to delete this node?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes:
-
 					connectionsToDelete = []
 					for knob in self.selectedNode.knobs:	
 						connectionsToDelete.extend(self.findConnections(knob))	
@@ -357,8 +356,8 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 					
 					self.selectedNode = None				
 					self.updateGL()
-						
-						
+							
+							
 						
 						
 						
