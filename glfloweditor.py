@@ -50,7 +50,7 @@ class FlowNode(QtCore.QObject, Draggable):
 		
 		self.knobs = []
 		
-		if func not in self.parent().outputFunctions:
+		if not self.isOutput():
 			self.knobs.append(FlowKnob(self, FlowKnob.knobTypeOutput, "Output"))
 		
 		self.properties = OrderedDict()
@@ -58,8 +58,7 @@ class FlowNode(QtCore.QObject, Draggable):
 		self.title = func.__name__
 		signature = inspect.signature(func)
 		for parameter in signature.parameters.values():
-			if parameter.annotation == SynthBuffer: # data
-				# -1 because the first one is the output knob
+			if parameter.annotation == np.ndarray: # data
 				knob = FlowKnob(self, FlowKnob.knobTypeInput, parameter.name, self.getInputKnobCount())
 				self.knobs.append(knob)
 			elif parameter.annotation == SynthParameters:
@@ -84,7 +83,7 @@ class FlowNode(QtCore.QObject, Draggable):
 		if not selected:
 			qglColor(palette.color(QtGui.QPalette.Button))
 		else:
-			qglColor(palette.color(QtGui.QPalette.Highlight))
+			qglColor(palette.color(QtGui.QPalette.Light))
 			
 		glRectf(self.x+1, self.y+1, self.x+self.w-1, self.y+self.h-1)
 		
@@ -106,6 +105,9 @@ class FlowNode(QtCore.QObject, Draggable):
 		
 	def __repr__(self):
 		return "<FlowNode '%s'>" % self.title
+		
+	def isOutput(self):
+		return self.func in self.parent().outputFunctions
 		
 class FlowConnectionError(Exception):
 	pass
@@ -340,22 +342,25 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 	
 	def keyPressEvent(self, event):
 		if event.matches(QtGui.QKeySequence.Delete):
-			if self.selectedNode and QtWidgets.QMessageBox.question(self.parent(), "Delete Node", "Do you really want to delete this node?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes:
+			if self.selectedNode:
+				if self.selectedNode.isOutput():
+					QtWidgets.QMessageBox.warning(self.parent(), "Delete Node", "Cannot delete output node.", QtWidgets.QMessageBox.Ok)
+				elif QtWidgets.QMessageBox.question(self.parent(), "Delete Node", "Do you really want to delete this node?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes:
 
-				connectionsToDelete = []
-				for knob in self.selectedNode.knobs:	
-					connectionsToDelete.extend(self.findConnections(knob))	
-				self.connections = [c for c in self.connections if c not in connectionsToDelete]
+					connectionsToDelete = []
+					for knob in self.selectedNode.knobs:	
+						connectionsToDelete.extend(self.findConnections(knob))	
+					self.connections = [c for c in self.connections if c not in connectionsToDelete]
+						
+					self.nodes.remove(self.selectedNode)
+					del self.selectedNode
 					
-				self.nodes.remove(self.selectedNode)
-				del self.selectedNode
+					self.selectedNode = None				
+					self.updateGL()
+						
+						
+						
+						
+						
+						
 				
-				self.selectedNode = None				
-				self.updateGL()
-					
-					
-					
-					
-					
-					
-			

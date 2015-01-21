@@ -4,10 +4,11 @@ import contextlib
 
 from PyQt5 import QtCore, QtWidgets, QtGui, uic
 
-from decorators import *
 from glfloweditor import *
 from propertyeditor import *
 from synth import *
+
+from nodes import *
 
 form, base = uic.loadUiType("mainwindow.ui")
 class MainWindow(form,base):
@@ -18,7 +19,12 @@ class MainWindow(form,base):
 		self.setWindowTitle("Möhre")
 		
 		self.actionPlay.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
+		self.actionPlay.triggered.connect(self.play)
+		
 		self.actionStop.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaStop))
+		
+		self.actionSave.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton))
+		self.actionSave.triggered.connect(self.save)
 		
 		self.tableProperties = PropertyWidget(parent=self)
 		self.layoutDockProperty.layout().addWidget(self.tableProperties)
@@ -27,6 +33,16 @@ class MainWindow(form,base):
 		self.glFlowEditor.signalEditNode.connect(self.tableProperties.loadProperties)
 		
 		self.setCentralWidget(self.glFlowEditor)
+		
+		self.synthesizer = Synthesizer()
+		
+	def play(self):
+		self.synthesizer.play(self.glFlowEditor)
+	
+	def save(self):
+		fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save to file", filter="wave files (*.wav *.wave);;All files (*.*)")
+		if fileName:
+			self.synthesizer.saveToFile(self.glFlowEditor, fileName)
 		
 	def handleError(self, shortMessage, longMessage):
 		self.statusBar.showMessage(shortMessage)
