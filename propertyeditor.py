@@ -1,5 +1,3 @@
-
-
 from PyQt5 import QtCore, QtWidgets, QtGui, uic
 
 class PropertyWidget(QtWidgets.QTableWidget):

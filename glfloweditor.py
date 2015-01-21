@@ -183,11 +183,8 @@ class FlowKnob(QtCore.QObject, Draggable):
 	def dropDrag(self, dragObject):
 		knob = self.node.parent().pickKnob(dragObject.x, dragObject.y)
 		if knob and knob is not self:
-			try:
-				connection = FlowConnection(self, knob, parent=self.node.parent())
-				self.node.parent().addConnection(connection)
-			except FlowConnectionError as e:
-				print(e)
+			connection = FlowConnection(self, knob, parent=self.node.parent())
+			self.node.parent().addConnection(connection)
 	
 	def __str__(self):
 		return "FlowKnob of '%s' (index %d, type %d)" % (self.node, self.index, self.type)
@@ -329,10 +326,12 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 			
 	def mouseReleaseEvent(self, event):
 		if self.dragObject:
-			self.dragObject.update(event.x(), event.y())
-			self.dragObject.drop()
-			self.dragObject = None
-			self.updateGL()
+			try:
+				self.dragObject.update(event.x(), event.y())
+				self.dragObject.drop()
+			finally:
+				self.dragObject = None
+				self.updateGL()
 		
 	def mouseMoveEvent(self, event):
 		if self.dragObject:
