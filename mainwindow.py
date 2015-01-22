@@ -22,10 +22,16 @@ class MainWindow(form,base):
 		self.actionPlay.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
 		self.actionPlay.triggered.connect(self.play)
 		
-		self.actionStop.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaStop))
+		self.actionStop.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaStop))		
 		
 		self.actionSave.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_DialogSaveButton))
-		self.actionSave.triggered.connect(self.save)
+		self.actionSave.triggered.connect(self.save)		
+		
+		self.actionOpen.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_DialogOpenButton))
+		self.actionOpen.triggered.connect(self.open)
+		
+		self.actionExport.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_DialogApplyButton))
+		self.actionExport.triggered.connect(self.export)
 		
 		self.tableProperties = PropertyWidget(parent=self)
 		self.layoutDockProperty.layout().addWidget(self.tableProperties)
@@ -41,11 +47,23 @@ class MainWindow(form,base):
 	def play(self):
 		self.synthesizer.play(self.glFlowEditor)
 	
-	def save(self):
-		fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save to file", filter="wave files (*.wav *.wave);;All files (*.*)")
+	def export(self):
+		fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Export to file", filter="wave files (*.wav *.wave);;All files (*.*)")
 		if fileName:
 			self.synthesizer.saveToFile(self.glFlowEditor, fileName)
 			self.statusBar.showMessage("Export complete.")
+			
+	def save(self):
+		fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save to file", filter="Flow Graph files (*.graph);;All files (*.*)")
+		if fileName:
+			# save to file
+			pass
+			
+	def open(self):
+		fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open file", filter="Flow Graph files (*.graph);;All files (*.*)")
+		if fileName:
+			# load file
+			pass
 		
 	def handleError(self, shortMessage, longMessage):
 		self.statusBar.showMessage(shortMessage)
