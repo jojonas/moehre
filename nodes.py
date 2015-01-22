@@ -1,8 +1,10 @@
+import wave
+
 import numpy as np
 
 from decorators import *
 from usernodes import *
-from synth import SynthParameters
+from synth import SynthParameters, SynthException
 
 @registerFunction
 def sin(params:SynthParameters=None, modulation:np.ndarray=0.0, frequency:float=440, amplitude:float=1.0):
@@ -70,7 +72,45 @@ def delay(params:SynthParameters=None, signal:np.ndarray=0.0, delayTime:float=0.
 	return np.append(np.zeros(zeroLen), signal[zeroLen:params.samples])
 	
 @registerFunction
-def multiply(signal:np.ndarray=0.0, amplitude:float=1.0):
-	return amplitude * signal
-
+def constant(params:SynthParameters=None, constant:float=1.0):
+	ret = np.ndarray(params.samples)
+	ret.fill(constant)
+	return ret
+	
+@registerFunction
+def add(signalA:np.ndarray=0.0, signalB:np.ndarray=0.0):
+	return signalA + signalB
+	
+@registerFunction
+def fromWaveFile(params:SynthParameters=None, filename:str="testIn.wav", amplitude:float=1.0):
+	with wave.open(filename) as file:
+		if file.getnchannels() != 1:
+			raise SynthException("Only files with one channel are supported.")
+			return np.zeros(params.samples)
+		else:
+			n = file.getnframes()
+			frames = file.readframes(n)
+			
+			sampTypes = {1: np.uint8, 2:np.int16, 4:np.int32}
+			sampWidth = file.getsampwidth()
+			if sampWidth not in sampTypes:
+				raise SynthException("Only samplewidths of 1, 2 or 4 bytes are supported.")
+			else:
+				maxValue = 2**(sampWidth*8 - 1) - 1
+				data = np.fromstring(frames, dtype = sampTypes[sampWidth]).astype(float) / maxValue
+				if n > params.samples:
+					data = data[:params.samples]
+				elif n < params.samples:
+					data = np.concatenate((data, np.zeros(params.samples - n)), axis = 0)
+				
+				# sample rate conversion
+				rate = file.getframerate()
+				if rate != params.sampleRate:
+					x = np.linspace(0.0, n / rate, n)
+					nx = np.linspace(0.0, params.length, params.samples)
+					interpolator = interp1d(x, data)
+					data = interpolator(nx)
+					
+				return data
+	
 #cheapReverb, exponential
