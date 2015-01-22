@@ -70,7 +70,7 @@ class Synthesizer:
 			file.setnframes(self.synthParameters.samples)
 			clamped = np.clip(self.soundBuffer, -1.0, 1.0)
 			scaled = np.int16(clamped*32767)
-			file.writeframesraw(scaled.tobytes())
+			file.writeframesraw(scaled.tobytes()) # normal writeframes doesn't work even though written frames and nframes are equal?
 	
 	def play(self, flowGraph):
 		self.synthesizeFromFlowGraph(flowGraph)
