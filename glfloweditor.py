@@ -138,9 +138,21 @@ class FlowConnection(QtCore.QObject):
 		qglColor(color)
 		glLineWidth(FlowConnection.width)
 
-		glBegin(GL_LINES)
-		glVertex2f(startX, startY)
-		glVertex2f(endX, endY)
+		# Bezier Curve
+		velocity = 60 # "roundness"
+		segments = 20
+		glBegin(GL_LINE_STRIP)
+		for segment in range(segments+1):
+			t = segment / segments
+			u = 1-t
+			tt = t*t
+			uu = u*u
+			uuu = uu*u
+			ttt = tt*t
+			# 
+			x = uuu*startX + 3*uu*t*(startX-velocity) + 3*u*tt*(endX+velocity) + ttt*endX
+			y = uuu*startY + 3*uu*t*(startY) + 3*u*tt*(endY) + ttt*endY
+			glVertex2f(x, y)
 		glEnd()
 		
 	def __str__(self):
@@ -181,7 +193,12 @@ class FlowKnob(QtCore.QObject, Draggable):
 			
 	def drawDrag(self, dragObject):
 		color = self.node.parent().palette().color(QtGui.QPalette.Highlight)
-		FlowConnection.drawLine(color, dragObject.startX, dragObject.startY, dragObject.x, dragObject.y)
+		fromX, fromY = dragObject.startX, dragObject.startY
+		toX, toY = dragObject.x, dragObject.y
+		if self.type == self.knobTypeOutput:
+			fromX, toX = toX, fromX
+			fromY, toY = toY, fromY
+		FlowConnection.drawLine(color, fromX, fromY, toX, toY)
 		
 	def dropDrag(self, dragObject):
 		knob = self.node.parent().pickKnob(dragObject.x, dragObject.y)
