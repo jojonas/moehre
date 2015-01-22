@@ -42,16 +42,16 @@ def whistle(params:SynthParameters=None, frequency:float=440, mixValue:float=0.5
 	return amplitude*mix(np.sin(2*np.pi*frequency * t), np.sin(2*np.pi*frequency*frequencyFactor * t), mixValue)
 	
 @registerFunction	
-def triangleSawtooth(params:SynthParameters=None, frequency:float=440, amplitude:float=1.0, upLength:float=0.5):
+def triangleSawtooth(params:SynthParameters=None, frequency:float=440, amplitude:float=1.0, risingTime:float=0.5):
 	t = np.linspace(0.0, params.length, params.samples)*frequency
 	t -= np.floor(t)
 	up = None
-	if upLength < 1e-5:
+	if risingTime < 1e-5:
 		up = amplitude
 	else:
-		up = amplitude * (-1.0 + 2.0/upLength*t)
-	down = amplitude * (3.0 - 2.0/(1.0-upLength)*t)
-	return np.where(t < upLength, up, down)
+		up = amplitude * (-1.0 + 2.0/risingTime*t)
+	down = amplitude * (3.0 - 2.0/(1.0-risingTime)*t)
+	return np.where(t < risingTime, up, down)
 	
 @registerFunction
 def step(params:SynthParameters=None, stepTime:float=0.5, fromValue:float=0.0, toValue:float=1.0):
@@ -68,5 +68,9 @@ def linear(params:SynthParameters=None, startTime:float=0.0, startValue:float=0.
 def delay(params:SynthParameters=None, signal:np.ndarray=0.0, delayTime:float=0.1):
 	zeroLen = int(delayTime * params.sampleRate)
 	return np.append(np.zeros(zeroLen), signal[zeroLen:params.samples])
+	
+@registerFunction
+def multiply(signal:np.ndarray=0.0, amplitude:float=1.0):
+	return amplitude * signal
 
 #cheapReverb, exponential
