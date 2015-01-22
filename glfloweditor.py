@@ -14,8 +14,8 @@ def glCircle(x,y, radius, segments=10):
 	glVertex2f(x,y)
 	t = 0.0
 	for i in range(segments+1):
-		glVertex2f(x+math.cos(t)*radius, y+math.sin(t)*radius)
-		t += 2*math.pi/segments
+		glVertex2f(x+math.sin(t)*radius, y+math.cos(t)*radius)
+		t += math.pi/segments
 	glEnd()
 	
 def qglColor(c):
@@ -40,6 +40,8 @@ class Draggable:
 	
 	
 class FlowNode(QtCore.QObject, Draggable):
+	nodeFont = None # initialized on first construction
+
 	def __init__(self, func, parent=None):
 		QtCore.QObject.__init__(self, parent)
 		
@@ -67,16 +69,21 @@ class FlowNode(QtCore.QObject, Draggable):
 			else:
 				self.properties[parameter.name] = Property(name=parameter.name, type=parameter.annotation, value=parameter.default)
 				
+		# cannot be intialized statically, because a QApplication must be started
+		if not FlowNode.nodeFont:
+			FlowNode.nodeFont = QtWidgets.QApplication.font()
+			
+		fontMetrics = QtGui.QFontMetrics(self.nodeFont)
+		self.fontLineHeight = (fontMetrics.height()+fontMetrics.lineSpacing())
+		self.fontHeight = fontMetrics.height()
+		self.fontAscent = fontMetrics.ascent()
+		self.h = self.fontLineHeight * (self.getInputKnobCount()+1)
+				
 	def getInputKnobCount(self):
 		return len(list(filter(lambda x : x.type == FlowKnob.knobTypeInput, self.knobs)))
 
 	def draw(self, selected=False):
 		palette = self.parent().palette()
-		
-		qglColor(palette.color(QtGui.QPalette.Shadow))
-		
-		for knob in self.knobs:
-			knob.draw()
 		
 		qglColor(palette.color(QtGui.QPalette.Dark))
 		glRectf(self.x, self.y, self.x+self.w, self.y+self.h)
@@ -88,8 +95,19 @@ class FlowNode(QtCore.QObject, Draggable):
 			
 		glRectf(self.x+1, self.y+1, self.x+self.w-1, self.y+self.h-1)
 		
+		for knob in self.knobs:
+			knob.draw()
+			
+		qglColor(palette.color(QtGui.QPalette.Dark))
+		glBegin(GL_LINES)
+		glVertex2f(self.x + 3, self.y + self.fontLineHeight)
+		glVertex2f(self.x + self.w - 3, self.y + self.fontLineHeight)
+		glEnd()
+		
 		qglColor(palette.color(QtGui.QPalette.Text))
-		self.parent().renderText(self.x+4, self.y+15, self.title) # works only if parent is qglWidget ;)
+		self.nodeFont.setBold(True)
+		self.parent().renderText(self.x+3, self.y+(self.fontLineHeight+self.fontAscent)*0.5, self.title, font=self.nodeFont) # works only if parent is qglWidget ;)
+		self.nodeFont.setBold(False)
 		
 	def isInShape(self, x,y):
 		return self.x <= x <= self.x+self.w and self.y <= y <= self.y+self.h
@@ -175,12 +193,23 @@ class FlowKnob(QtCore.QObject, Draggable):
 		
 	def draw(self):
 		x,y = self.getPosition()
-		glCircle(x,y, self.radius)
+		palette = self.node.parent().palette()
+		
+		qglColor(palette.color(QtGui.QPalette.Shadow))
+		
+		
+		if self.type == self.knobTypeOutput:
+			glCircle(x,y, self.radius)
+		if self.type == self.knobTypeInput:
+			glCircle(x,y, -self.radius) # negative radius to flip half circle
+			qglColor(palette.color(QtGui.QPalette.Text))
+			self.node.parent().renderText(x+3, y+self.node.fontAscent*0.5, self.name, font=self.node.nodeFont) 
 		
 	def getPosition(self): # relative to node coordinates
 		if self.type == self.knobTypeInput:
-			dist = self.node.h / (self.node.getInputKnobCount()+1)
-			return self.node.x, self.node.y + (self.index+1)*dist
+			dist = self.node.fontLineHeight
+			#dist = self.node.h / (self.node.getInputKnobCount()+1)
+			return self.node.x, self.node.y + (self.index+1.5)*dist
 		elif self.type == self.knobTypeOutput:
 			return self.node.x + self.node.w, self.node.y + self.node.h/2
 		
@@ -241,7 +270,10 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 			self.draggable.drawDrag(self)
 	
 	def __init__(self, parent=None, *, outputFunctions=(), functions=()):
-		QtOpenGL.QGLWidget.__init__(self, parent)
+		format = QtOpenGL.QGLFormat.defaultFormat()
+		format.setSampleBuffers(True)
+		format.setSamples(16)
+		QtOpenGL.QGLWidget.__init__(self, format, parent)
 		if not self.isValid():
 			raise OSError("OpenGL not supported.")
 			
@@ -258,6 +290,7 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 		
 	def initializeGL(self):
 		self.qglClearColor(self.palette().color(QtGui.QPalette.Base))
+		glEnable(GL_MULTISAMPLE)
 		glEnable(GL_LINE_SMOOTH)
 		
 	def resizeGL(self, w, h):
@@ -297,6 +330,11 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 				if knob.isInShape(x,y):
 					return knob
 					
+	def pickNode(self, x, y):
+		for node in self.nodes:
+			if node.isInShape(x,y):
+				return node
+					
 	def findConnections(self, knob):
 		for c in self.connections:
 			if c.inputKnob == knob or c.outputKnob == knob:
@@ -310,16 +348,30 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 			self.signalEditNode.emit(OrderedDict())
 		self.updateGL()
 		
+	def deleteNode(self, node):
+		if node.isOutput():
+			raise RuntimeError("Output node must not be deleted")		
+		else:
+			connectionsToDelete = []
+			for knob in node.knobs:	
+				connectionsToDelete.extend(self.findConnections(knob))	
+			self.connections = [c for c in self.connections if c not in connectionsToDelete]
+				
+			self.nodes.remove(node)
+			del node
+								
+		
 	def mousePressEvent(self, event):
 		x, y = event.x(), event.y()	
 		if event.button() & QtCore.Qt.LeftButton:
-			for i, node in enumerate(self.nodes):
-				if node.isInShape(x,y):
-					self.dragObject = self.DragObject(x, y, node)
-					self.nodes[0], self.nodes[i] = self.nodes[i], self.nodes[0]
-					self.selectNode(node)
-					self.updateGL() # updateGL because z-order has changed
-					return
+			node = self.pickNode(x,y)
+			if node:
+				self.dragObject = self.DragObject(x, y, node)
+				i = self.nodes.index(node)
+				self.nodes[0], self.nodes[i] = self.nodes[i], self.nodes[0]
+				self.selectNode(node)
+				self.updateGL() # updateGL because z-order has changed
+				return
 			
 			knob = self.pickKnob(x,y)
 			if knob:
@@ -342,12 +394,17 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 	
 	def contextMenuEvent(self, event):
 		menu = QtWidgets.QMenu(parent=self.parent())
-		#menu.setTearOffEnabled(True)
-		for i, func in enumerate(self.functions):
-			if func not in self.outputFunctions:
-				action = menu.addAction(camelCaseToWords(func.__name__))
-				x,y = event.x(), event.y()
-				action.triggered.connect(functools.partial(self.addNode, func, x, y)) # lambda does not work in this case!! 
+		
+		x,y = event.x(), event.y()
+		node = self.pickNode(x,y)
+		if node:
+			action = menu.addAction("Delete node")
+			action.triggered.connect(functools.partial(self.deleteNode, node))
+		else:	
+			for i, func in enumerate(self.functions):
+				if func not in self.outputFunctions:
+					action = menu.addAction(camelCaseToWords(func.__name__))
+					action.triggered.connect(functools.partial(self.addNode, func, x, y)) # lambda does not work in this case!! 
 		menu.popup(event.globalPos())
 			
 	def mouseReleaseEvent(self, event):
@@ -370,18 +427,9 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 				if self.selectedNode.isOutput():
 					QtWidgets.QMessageBox.warning(self.parent(), "Delete Node", "Cannot delete output node.", QtWidgets.QMessageBox.Ok)
 				elif QtWidgets.QMessageBox.question(self.parent(), "Delete Node", "Do you really want to delete this node?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes:
-					connectionsToDelete = []
-					for knob in self.selectedNode.knobs:	
-						connectionsToDelete.extend(self.findConnections(knob))	
-					self.connections = [c for c in self.connections if c not in connectionsToDelete]
-						
-					self.nodes.remove(self.selectedNode)
-					del self.selectedNode
-					
+					self.deleteNode(self.selectedNode)		
 					self.selectNode(None)
 							
-							
-						
 						
 						
 						

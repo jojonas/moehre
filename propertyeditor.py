@@ -10,7 +10,7 @@ def camelCaseToWords(text):
 			words += char
 		else:
 			words += " " + char.lower()
-	return words
+	return words.strip()
 	
 Property = namedtuple("Property", ["name", "type", "value"])
 
@@ -47,6 +47,7 @@ class PropertyWidget(QtWidgets.QTableWidget):
 			self.setItem(i, 1, itemValue)
 						
 		self.verticalHeader().hide()
+		self.resizeColumnsToContents()
 		
 	def propertyChanged(self, item):
 		name = item.data(self.itemRolePropertyName)
