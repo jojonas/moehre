@@ -193,6 +193,7 @@ class FlowKnob(QtCore.QObject, Draggable):
 			
 	def drawDrag(self, dragObject):
 		color = self.node.parent().palette().color(QtGui.QPalette.Highlight)
+		# swap them if necessary, so the bezier curves won't look off (have the right control points)
 		fromX, fromY = dragObject.startX, dragObject.startY
 		toX, toY = dragObject.x, dragObject.y
 		if self.type == self.knobTypeOutput:
