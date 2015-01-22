@@ -139,7 +139,7 @@ class FlowConnection(QtCore.QObject):
 		glLineWidth(FlowConnection.width)
 
 		# Bezier Curve
-		velocity = 60 # "roundness"
+		velocity = 100 # "roundness"
 		segments = 20
 		glBegin(GL_LINE_STRIP)
 		for segment in range(segments+1):
