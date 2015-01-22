@@ -30,7 +30,7 @@ class Synthesizer:
 		for knob in node.knobs:
 			if knob.type == knob.knobTypeInput:
 				for connection in flowGraph.findConnections(knob):
-					if connection.outputKnob in previous:
+					if connection.outputKnob.node in previous:
 						raise SynthException("No loops allowed in graph.")
 					else:
 						# trim buffer in length
