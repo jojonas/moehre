@@ -61,13 +61,21 @@ class FlowNode(QtCore.QObject, Draggable):
 		self.title = camelCaseToWords(func.__name__)
 		signature = inspect.signature(func)
 		for parameter in signature.parameters.values():
-			if parameter.annotation == np.ndarray: # data
-				knob = FlowKnob(self, FlowKnob.knobTypeInput, parameter.name, self.getInputKnobCount())
+			property = Property(name=parameter.name, type=parameter.annotation, value=parameter.default)
+			
+			if property.type == SynthParameters:
+				property = property._replace(hasKnob=False, hasEditable=False)
+			if property.type == np.ndarray:
+				property = property._replace(hasKnob=True, hasEditable=False)
+			elif property.type == float:
+				property = property._replace(hasKnob=True, hasEditable=True)
+				
+			if property.hasKnob:
+				knob = FlowKnob(self, FlowKnob.knobTypeInput, property.name, self.getInputKnobCount())
 				self.knobs.append(knob)
-			elif parameter.annotation == SynthParameters:
-				pass
-			else:
-				self.properties[parameter.name] = Property(name=parameter.name, type=parameter.annotation, value=parameter.default)
+				property = property._replace(knob=knob)
+			
+			self.properties[parameter.name] = property
 				
 		# cannot be intialized statically, because a QApplication must be started
 		if not FlowNode.nodeFont:
@@ -192,7 +200,10 @@ class FlowKnob(QtCore.QObject, Draggable):
 		
 	def draw(self, textOffset=0):
 		x,y = self.getPosition()
-		qglColor(self.node.parent().knobColor)
+		if not self.isConnected():
+			qglColor(self.node.parent().knobColor)
+		else:
+			qglColor(self.node.parent().connectionColor)
 		if self.type == self.knobTypeOutput:
 			glCircle(x,y, self.radius)
 		if self.type == self.knobTypeInput:
@@ -214,6 +225,9 @@ class FlowKnob(QtCore.QObject, Draggable):
 			return kx-self.radius <= x <= kx and ky-self.radius <= y <= ky+self.radius
 		elif self.type == self.knobTypeOutput:
 			return kx <= x <= kx+self.radius and ky-self.radius <= y <= ky+self.radius
+			
+	def isConnected(self):
+		return next(self.node.parent().findConnections(self), None) is not None
 			
 	def drawDrag(self, dragObject):
 		# swap them if necessary, so the bezier curves won't look off (have the right control points)
@@ -291,7 +305,7 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 		self.nodeShadowColor = palette.color(QtGui.QPalette.Shadow)
 		self.nodeTextColor = palette.color(QtGui.QPalette.Text)
 		self.nodeTextColorSelected = palette.color(QtGui.QPalette.Text)
-		self.knobColor = palette.color(QtGui.QPalette.Dark)
+		self.knobColor = palette.color(QtGui.QPalette.Button)
 		self.connectionColor = palette.color(QtGui.QPalette.Dark)
 
 		mode = "nohighcontrast"

@@ -39,17 +39,16 @@ class Synthesizer:
 		parameters = {}
 		signature = inspect.signature(node.func)
 		for parameter in signature.parameters.values():
-			if parameter.name in node.properties:
+			property = node.properties[parameter.name]
+			if property.type == SynthParameters:
+				parameters[parameter.name] = self.synthParameters
+			elif property.name in inputs:
+				parameters[parameter.name] = inputs[parameter.name]
+			elif property.hasEditable:
 				parameters[parameter.name] = node.properties[parameter.name].value
-			else:
-				if parameter.annotation == np.ndarray:
-					if parameter.name in inputs:
-						parameters[parameter.name] = inputs[parameter.name]
-					else:
-						parameters[parameter.name] = np.ndarray(self.synthParameters.samples)
-						parameters[parameter.name].fill(parameter.default)
-				elif parameter.annotation == SynthParameters:
-					parameters[parameter.name] = self.synthParameters
+			elif property.hasKnob: # knob not connected, else it would be in inputs
+				parameters[parameter.name] = np.ndarray(self.synthParameters.samples)
+				parameters[parameter.name].fill(parameter.default)
 				
 		return node.func(**parameters)
 		
