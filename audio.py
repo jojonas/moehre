@@ -15,19 +15,16 @@ def streamCallback(input, frame_count, time_info, status_flags):
 	
 	frame_count *= 4 # convert frames to bytes
 	
-	_playQueueSemaphore.acquire()
-	
-	l = len(_playQueue)
-	playBuf = None
-	if l <= frame_count:
-		playBuf = _playQueue[:l] + b"\x00"*(frame_count - l)
-		_playQueue = b""
-	else:
-		playBuf = _playQueue[:frame_count]
-		_playQueue = _playQueue[frame_count:]
-	
-	_playQueueSemaphore.release()
-
+	with _playQueueSemaphore:
+		l = len(_playQueue)
+		playBuf = None
+		if l <= frame_count:
+			playBuf = _playQueue[:l] + b"\x00"*(frame_count - l)
+			_playQueue = b""
+		else:
+			playBuf = _playQueue[:frame_count]
+			_playQueue = _playQueue[frame_count:]
+		
 	return (playBuf, pyaudio.paContinue)
 
 def reinitAudio(sampleRate):
@@ -45,6 +42,5 @@ def reinitAudio(sampleRate):
 def play(buffer):
 	global _playQueue
 	
-	_playQueueSemaphore.acquire()
-	_playQueue += buffer.astype(np.float32).tobytes()
-	_playQueueSemaphore.release()
+	with _playQueueSemaphore:
+		_playQueue += buffer.astype(np.float32).tobytes()
