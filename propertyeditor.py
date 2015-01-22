@@ -1,4 +1,5 @@
 import string
+from collections import namedtuple
 
 from PyQt5 import QtCore, QtWidgets, QtGui, uic
 
@@ -10,6 +11,8 @@ def camelCaseToWords(text):
 		else:
 			words += " " + char.lower()
 	return words
+	
+Property = namedtuple("Property", ["name", "type", "value"])
 
 class PropertyWidget(QtWidgets.QTableWidget):
 	itemRolePropertyName = QtCore.Qt.UserRole + 1
@@ -31,17 +34,16 @@ class PropertyWidget(QtWidgets.QTableWidget):
 		self._currentList = properties
 		self.setRowCount(len(self._currentList))
 		
-		for i, property in enumerate(self._currentList.items()):
-			name = property[0]
-			type, value = property[1]
-			
-			itemName = QtWidgets.QTableWidgetItem(camelCaseToWords(name))
+		for i, (_, property) in enumerate(self._currentList.items()):
+		
+		
+			itemName = QtWidgets.QTableWidgetItem(camelCaseToWords(property.name))
 			itemName.setFlags(itemName.flags() & ~QtCore.Qt.ItemIsEditable)
 			self.setItem(i, 0, itemName)
 			
-			itemValue = QtWidgets.QTableWidgetItem(str(value))
-			itemValue.setData(self.itemRolePropertyName, name)
-			itemValue.setData(self.itemRolePropertyType, type)
+			itemValue = QtWidgets.QTableWidgetItem(str(property.value))
+			itemValue.setData(self.itemRolePropertyName, property.name)
+			itemValue.setData(self.itemRolePropertyType, property.type)
 			self.setItem(i, 1, itemValue)
 						
 		self.verticalHeader().hide()
@@ -51,10 +53,7 @@ class PropertyWidget(QtWidgets.QTableWidget):
 		type = item.data(self.itemRolePropertyType)
 		if name and type:
 			value = type(item.text())
-			self._currentList[name] = (type, value)
-				
-				
-				
+			self._currentList[name] = Property(name=name, type=type, value=value)
 				
 				
 				

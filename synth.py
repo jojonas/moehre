@@ -40,7 +40,7 @@ class Synthesizer:
 		signature = inspect.signature(node.func)
 		for parameter in signature.parameters.values():
 			if parameter.name in node.properties:
-				parameters[parameter.name] = node.properties[parameter.name][1] # [1] = value
+				parameters[parameter.name] = node.properties[parameter.name].value
 			else:
 				if parameter.annotation == np.ndarray:
 					if parameter.name in inputs:
@@ -58,8 +58,8 @@ class Synthesizer:
 		if len(outputNodes) != 1:
 			raise SynthException("Exactly one Output node required.")
 		else:
-			self.synthParameters = SynthParameters(outputNodes[0].properties["sampleRate"][1], outputNodes[0].properties["length"][1])
-			self.playbackSpeedFactor = outputNodes[0].properties["playbackSpeedFactor"][1]
+			self.synthParameters = SynthParameters(outputNodes[0].properties["sampleRate"].value, outputNodes[0].properties["length"].value)
+			self.playbackSpeedFactor = outputNodes[0].properties["playbackSpeedFactor"].value
 			self.soundBuffer = self._workNode(outputNodes[0], flowGraph)
 			
 	def saveToFile(self, flowGraph, filename):

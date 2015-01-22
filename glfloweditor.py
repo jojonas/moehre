@@ -7,7 +7,7 @@ from PyQt5 import QtOpenGL, QtGui, QtCore, QtWidgets, Qt
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from synth import *
-from propertyeditor import camelCaseToWords
+from propertyeditor import camelCaseToWords, Property
 	
 def glCircle(x,y, radius, segments=10):
 	glBegin(GL_TRIANGLE_FAN)
@@ -65,7 +65,7 @@ class FlowNode(QtCore.QObject, Draggable):
 			elif parameter.annotation == SynthParameters:
 				pass
 			else:
-				self.properties[parameter.name] = (parameter.annotation, parameter.default)		
+				self.properties[parameter.name] = Property(name=parameter.name, type=parameter.annotation, value=parameter.default)
 				
 	def getInputKnobCount(self):
 		return len(list(filter(lambda x : x.type == FlowKnob.knobTypeInput, self.knobs)))
