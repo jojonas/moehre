@@ -7,6 +7,7 @@ from PyQt5 import QtOpenGL, QtGui, QtCore, QtWidgets, Qt
 from OpenGL.GL import *
 from OpenGL.GLU import *
 from synth import *
+from propertyeditor import camelCaseToWords
 	
 def glCircle(x,y, radius, segments=10):
 	glBegin(GL_TRIANGLE_FAN)
@@ -55,7 +56,7 @@ class FlowNode(QtCore.QObject, Draggable):
 		
 		self.properties = OrderedDict()
 		
-		self.title = func.__name__
+		self.title = camelCaseToWords(func.__name__)
 		signature = inspect.signature(func)
 		for parameter in signature.parameters.values():
 			if parameter.annotation == np.ndarray: # data
@@ -264,7 +265,7 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 		node.x = x
 		node.y = y
 		self.nodes.append(node)
-		self.updateGL()
+		self.selectNode(node)
 		
 	def addConnection(self, connection):
 		for c in self.findConnections(connection.inputKnob):
@@ -282,6 +283,14 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 		for c in self.connections:
 			if c.inputKnob == knob or c.outputKnob == knob:
 				yield c
+				
+	def selectNode(self, node):
+		self.selectedNode = node
+		if node:
+			self.signalEditNode.emit(node.properties)
+		else:
+			self.signalEditNode.emit(OrderedDict())
+		self.updateGL()
 		
 	def mousePressEvent(self, event):
 		x, y = event.x(), event.y()	
@@ -290,8 +299,7 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 				if node.isInShape(x,y):
 					self.dragObject = self.DragObject(x, y, node)
 					self.nodes[0], self.nodes[i] = self.nodes[i], self.nodes[0]
-					self.selectedNode = node
-					self.signalEditNode.emit(node.properties)
+					self.selectNode(node)
 					self.updateGL() # updateGL because z-order has changed
 					return
 			
@@ -300,9 +308,7 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 				self.dragObject = self.DragObject(x, y, knob)
 				return
 				
-			self.selectedNode = None
-			self.signalEditNode.emit(OrderedDict())
-			self.updateGL()
+			self.selectNode(None)
 				
 		elif event.button() & QtCore.Qt.RightButton:
 			knob = self.pickKnob(x,y)
@@ -321,9 +327,9 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 		#menu.setTearOffEnabled(True)
 		for i, func in enumerate(self.functions):
 			if func not in self.outputFunctions:
-				action = menu.addAction(func.__name__)
+				action = menu.addAction(camelCaseToWords(func.__name__))
 				x,y = event.x(), event.y()
-				action.triggered.connect(functools.partial(self.addNode, func, x, y)) # lambda does not work in this case!!
+				action.triggered.connect(functools.partial(self.addNode, func, x, y)) # lambda does not work in this case!! 
 		menu.popup(event.globalPos())
 			
 	def mouseReleaseEvent(self, event):
@@ -354,8 +360,7 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 					self.nodes.remove(self.selectedNode)
 					del self.selectedNode
 					
-					self.selectedNode = None				
-					self.updateGL()
+					self.selectNode(None)
 							
 							
 						
