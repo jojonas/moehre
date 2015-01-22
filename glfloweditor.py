@@ -83,30 +83,30 @@ class FlowNode(QtCore.QObject, Draggable):
 		return len(list(filter(lambda x : x.type == FlowKnob.knobTypeInput, self.knobs)))
 
 	def draw(self, selected=False):
-		palette = self.parent().palette()
+		textOffset = 3
+		shadowOffset = (1,1)
 		
-		qglColor(palette.color(QtGui.QPalette.Dark))
+		qglColor(self.parent().nodeShadowColor)
+		glRectf(self.x+shadowOffset[0], self.y+shadowOffset[1], self.x+self.w+shadowOffset[0], self.y+self.h+shadowOffset[1])
+		
+		qglColor(self.parent().nodeBorderColor if not selected else self.parent().nodeBorderColorSelected)
 		glRectf(self.x, self.y, self.x+self.w, self.y+self.h)
 		
-		if not selected:
-			qglColor(palette.color(QtGui.QPalette.Button))
-		else:
-			qglColor(palette.color(QtGui.QPalette.Light))
-			
+		qglColor(self.parent().nodeBackgroundColor if not selected else self.parent().nodeBackgroundColorSelected)
 		glRectf(self.x+1, self.y+1, self.x+self.w-1, self.y+self.h-1)
 		
 		for knob in self.knobs:
-			knob.draw()
+			knob.draw(textOffset=textOffset)
 			
-		qglColor(palette.color(QtGui.QPalette.Dark))
+		qglColor(self.parent().nodeBorderColor if not selected else self.parent().nodeBorderColorSelected)
 		glBegin(GL_LINES)
 		glVertex2f(self.x + 3, self.y + self.fontLineHeight)
 		glVertex2f(self.x + self.w - 3, self.y + self.fontLineHeight)
 		glEnd()
 		
-		qglColor(palette.color(QtGui.QPalette.Text))
+		qglColor(self.parent().nodeTextColor if not selected else self.parent().nodeTextColorSelected)
 		self.nodeFont.setBold(True)
-		self.parent().renderText(self.x+3, self.y+(self.fontLineHeight+self.fontAscent)*0.5, self.title, font=self.nodeFont) # works only if parent is qglWidget ;)
+		self.parent().renderText(self.x+textOffset, self.y+(self.fontLineHeight+self.fontAscent)*0.5, self.title, font=self.nodeFont) # works only if parent is qglWidget ;)
 		self.nodeFont.setBold(False)
 		
 	def isInShape(self, x,y):
@@ -133,7 +133,7 @@ class FlowConnectionError(Exception):
 	
 class FlowConnection(QtCore.QObject):
 	width = 2
-	
+		
 	def __init__(self, knobA, knobB, parent=None):
 		QtCore.QObject.__init__(self, parent)
 		if knobA.type == FlowKnob.knobTypeInput and knobB.type == FlowKnob.knobTypeOutput:
@@ -146,10 +146,9 @@ class FlowConnection(QtCore.QObject):
 			raise FlowConnectionError("Invalid connection.")
 		
 	def draw(self):
-		color = self.parent().palette().color(QtGui.QPalette.Highlight)
 		x1, y1 = self.inputKnob.getPosition()
 		x2, y2 = self.outputKnob.getPosition()
-		self.drawLine(color, x1, y1, x2, y2)
+		self.drawLine(self.parent().connectionColor, x1, y1, x2, y2)
 		
 	@staticmethod
 	def drawLine(color, startX, startY, endX, endY):
@@ -191,18 +190,14 @@ class FlowKnob(QtCore.QObject, Draggable):
 		self.index = index
 		self.name = name
 		
-	def draw(self):
+	def draw(self, textOffset=0):
 		x,y = self.getPosition()
-		palette = self.node.parent().palette()
-		
-		qglColor(palette.color(QtGui.QPalette.Shadow))
-		
-		
+		qglColor(self.node.parent().knobColor)
 		if self.type == self.knobTypeOutput:
 			glCircle(x,y, self.radius)
 		if self.type == self.knobTypeInput:
 			glCircle(x,y, -self.radius) # negative radius to flip half circle
-			qglColor(palette.color(QtGui.QPalette.Text))
+			qglColor(self.node.parent().nodeTextColor)
 			self.node.parent().renderText(x+3, y+self.node.fontAscent*0.5, self.name, font=self.node.nodeFont) 
 		
 	def getPosition(self): # relative to node coordinates
@@ -221,14 +216,13 @@ class FlowKnob(QtCore.QObject, Draggable):
 			return kx <= x <= kx+self.radius and ky-self.radius <= y <= ky+self.radius
 			
 	def drawDrag(self, dragObject):
-		color = self.node.parent().palette().color(QtGui.QPalette.Highlight)
 		# swap them if necessary, so the bezier curves won't look off (have the right control points)
 		fromX, fromY = dragObject.startX, dragObject.startY
 		toX, toY = dragObject.x, dragObject.y
 		if self.type == self.knobTypeOutput:
 			fromX, toX = toX, fromX
 			fromY, toY = toY, fromY
-		FlowConnection.drawLine(color, fromX, fromY, toX, toY)
+		FlowConnection.drawLine(self.node.parent().connectionColor, fromX, fromY, toX, toY)
 		
 	def dropDrag(self, dragObject):
 		knob = self.node.parent().pickKnob(dragObject.x, dragObject.y)
@@ -287,9 +281,34 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 		
 		self.addNode(Output, 600, 300) # outputDummy should be a static function in the synthesizer
 		
+		# Fallback:
+		palette = self.palette()
+		self.backgroundColor = palette.color(QtGui.QPalette.Base)
+		self.nodeBackgroundColor = palette.color(QtGui.QPalette.Button)
+		self.nodeBackgroundColorSelected = palette.color(QtGui.QPalette.Light)
+		self.nodeBorderColor = palette.color(QtGui.QPalette.Dark)
+		self.nodeBorderColorSelected = palette.color(QtGui.QPalette.Dark)
+		self.nodeShadowColor = palette.color(QtGui.QPalette.Shadow)
+		self.nodeTextColor = palette.color(QtGui.QPalette.Text)
+		self.nodeTextColorSelected = palette.color(QtGui.QPalette.Text)
+		self.knobColor = palette.color(QtGui.QPalette.Dark)
+		self.connectionColor = palette.color(QtGui.QPalette.Dark)
+
+		mode = "nohighcontrast"
+		if mode == "highcontrast":
+			self.backgroundColor = QtGui.QColor(QtCore.Qt.darkGray)
+			self.nodeBackgroundColor = QtGui.QColor(QtCore.Qt.darkGreen)
+			self.nodeBackgroundColorSelected = QtGui.QColor(QtCore.Qt.darkGreen)
+			self.nodeBorderColor = QtGui.QColor(QtCore.Qt.black)
+			self.nodeBorderColorSelected = QtGui.QColor(QtCore.Qt.green)
+			self.nodeShadowColor = QtGui.QColor(QtCore.Qt.black)
+			self.nodeTextColor = QtGui.QColor(QtCore.Qt.white)
+			self.nodeTextColorSelected = QtGui.QColor(QtCore.Qt.white)
+			self.knobColor = QtGui.QColor(QtCore.Qt.darkRed)
+			self.connectionColor = QtGui.QColor(QtCore.Qt.yellow)
 		
 	def initializeGL(self):
-		self.qglClearColor(self.palette().color(QtGui.QPalette.Base))
+		self.qglClearColor(self.backgroundColor)
 		glEnable(GL_MULTISAMPLE)
 		glEnable(GL_LINE_SMOOTH)
 		
