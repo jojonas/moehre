@@ -1,4 +1,15 @@
+import string
+
 from PyQt5 import QtCore, QtWidgets, QtGui, uic
+
+def camelCaseToWords(text):
+	words = ""
+	for char in text:
+		if not char in string.ascii_uppercase:
+			words += char
+		else:
+			words += " " + char.lower()
+	return words
 
 class PropertyWidget(QtWidgets.QTableWidget):
 	itemRolePropertyName = QtCore.Qt.UserRole + 1
@@ -24,7 +35,7 @@ class PropertyWidget(QtWidgets.QTableWidget):
 			name = property[0]
 			type, value = property[1]
 			
-			itemName = QtWidgets.QTableWidgetItem(name)
+			itemName = QtWidgets.QTableWidgetItem(camelCaseToWords(name))
 			itemName.setFlags(itemName.flags() & ~QtCore.Qt.ItemIsEditable)
 			self.setItem(i, 0, itemName)
 			
