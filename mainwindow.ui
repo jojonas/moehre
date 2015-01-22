@@ -27,7 +27,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="actionPlay"/>
-   <addaction name="actionStop"/>
+   <addaction name="separator"/>
    <addaction name="actionSave"/>
   </widget>
   <widget class="QDockWidget" name="dockProperties">
