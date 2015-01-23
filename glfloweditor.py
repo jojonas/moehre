@@ -66,10 +66,8 @@ class FlowNode(QtCore.QObject, Draggable):
 			
 			if property.type == SynthParameters:
 				property = property._replace(hasKnob=False, hasEditable=False)
-			if property.type == np.ndarray:
-				property = property._replace(hasKnob=True, hasEditable=False)
-			elif property.type == float:
-				property = property._replace(hasKnob=True, hasEditable=True)
+			else:
+				property = property._replace(hasKnob=property.type.hasKnob, hasEditable=property.type.hasEditable)
 				
 			if property.hasKnob:
 				knob = FlowKnob(self, FlowKnob.knobTypeInput, property.name, self.getInputKnobCount())
@@ -498,7 +496,7 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 				for propDict in nodeDict["properties"]:
 					if propDict["name"] in node.properties:
 						prop = node.properties[propDict["name"]]
-						if propDict["type"] == prop.type.__name__:
+						if propDict["type"] == prop.type.type.__name__:
 							if prop.hasEditable:
 								node.properties[propDict["name"]] = prop._replace(value = propDict["value"])
 						else:
@@ -530,12 +528,13 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 			
 			nodeDict["properties"] = []
 			for n, prop in node.properties.items():
-				propDict = {}
-				propDict["name"] = prop.name
-				propDict["type"] = prop.type.__name__
-				propDict["value"] = prop.value
-				nodeDict["properties"].append(propDict)
-			
+				if prop.hasEditable:
+					propDict = {}
+					propDict["name"] = prop.name
+					propDict["type"] = prop.type.type.__name__
+					propDict["value"] = prop.value
+					nodeDict["properties"].append(propDict)
+				
 			jsonDict["nodes"].append(nodeDict)
 			
 		jsonDict["connections"] = []

@@ -3,6 +3,20 @@ import inspect
 _funcs = []
 _outputFunctions = []
 
+class ParameterType:
+	def __init__(self, type, hasEditable=False, hasKnob=False):
+		self.hasEditable = hasEditable
+		self.hasKnob = hasKnob
+		self.type = type
+		
+	def __call__(self, *args, **kwargs):
+		return self.type(*args, **kwargs)
+		
+def StreamOnly(type): return ParameterType(type, hasEditable=False, hasKnob=True)		
+def StreamOrProperty(type): return ParameterType(type, hasEditable=True, hasKnob=True)		
+def PropertyOnly(type): return ParameterType(type, hasEditable=True, hasKnob=False)
+
+
 def registerFunction(func):
 	_funcs.append(func)
 	signature = inspect.signature(func)

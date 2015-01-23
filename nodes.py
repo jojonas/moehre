@@ -7,44 +7,44 @@ from usernodes import *
 from synth import SynthParameters, SynthException
 
 @registerFunction
-def sin(params:SynthParameters=None, modulation:np.ndarray=0.0, frequency:float=440, amplitude:float=1.0):
+def sin(params:SynthParameters=None, modulation:StreamOrProperty(float)=0.0, frequency:StreamOrProperty(float)=440, amplitude:StreamOrProperty(float)=1.0):
 	t = np.linspace(0.0, params.length, params.samples)
 	return amplitude*np.sin(2 * np.pi * frequency * t + modulation)
 	
 @registerFunction
-def rectangle(params:SynthParameters=None, frequency:float=440, amplitude:float=1.0, duty:float=0.5):
+def rectangle(params:SynthParameters=None, frequency:StreamOrProperty(float)=440, amplitude:StreamOrProperty(float)=1.0, duty:StreamOrProperty(float)=0.5):
 	t = np.linspace(0.0, params.length, params.samples)*frequency
 	t -= np.floor(t)
 	return np.where(t <= duty, amplitude, -amplitude)
 	
 @registerFunction
-def clamp(channel:np.ndarray=0.0, level:float=1.0):
+def clamp(channel:StreamOnly(np.ndarray)=0.0, level:StreamOrProperty(float)=1.0):
 	return np.clip(channel, -level, level)
 	
 @registerFunction
-def mix2(channelA:np.ndarray=0.0, channelB:np.ndarray=0.0, mixA:float=0.5, mixB:float=0.5):
+def mix2(channelA:StreamOnly(np.ndarray)=0.0, channelB:StreamOnly(np.ndarray)=0.0, mixA:StreamOrProperty(float)=0.5, mixB:StreamOrProperty(float)=0.5):
 	return (channelA*mixA + channelB*mixB)
 	
 @registerFunction
-def mix(channelA:np.ndarray=0.0, channelB:np.ndarray=0.0, mixValue:float=0.5):
+def mix(channelA:StreamOnly(np.ndarray)=0.0, channelB:StreamOnly(np.ndarray)=0.0, mixValue:StreamOrProperty(float)=0.5):
 	return (channelA*(1-mixValue) + channelB*mixValue)
 	
 @registerFunction
-def sawtooth(params:SynthParameters=None, frequency:float=440, amplitude:float=1.0):
+def sawtooth(params:SynthParameters=None, frequency:StreamOrProperty(float)=440, amplitude:StreamOrProperty(float)=1.0):
 	t = np.linspace(0.0, params.length, params.samples)*frequency
 	return ((t - np.floor(t)) * 2.0 - 1.0) * amplitude
 
 @registerFunction
-def whiteNoise(params:SynthParameters=None, amplitude:float=1.0):
+def whiteNoise(params:SynthParameters=None, amplitude:StreamOrProperty(float)=1.0):
 	return (np.random.rand(params.samples) * 2.0 - 1.0) * amplitude
 
 @registerFunction	
-def whistle(params:SynthParameters=None, frequency:float=440, mixValue:float=0.5, frequencyFactor:float=10.0, amplitude:float=1.0):
+def whistle(params:SynthParameters=None, frequency:StreamOrProperty(float)=440, mixValue:StreamOrProperty(float)=0.5, frequencyFactor:StreamOrProperty(float)=10.0, amplitude:StreamOrProperty(float)=1.0):
 	t = np.linspace(0.0, params.length, params.samples)
 	return amplitude*mix(np.sin(2*np.pi*frequency * t), np.sin(2*np.pi*frequency*frequencyFactor * t), mixValue)
 	
 @registerFunction	
-def triangleSawtooth(params:SynthParameters=None, frequency:float=440, amplitude:float=1.0, risingTime:float=0.5):
+def triangleSawtooth(params:SynthParameters=None, frequency:StreamOrProperty(float)=440, amplitude:StreamOrProperty(float)=1.0, risingTime:StreamOrProperty(float)=0.5):
 	t = np.linspace(0.0, params.length, params.samples)*frequency
 	t -= np.floor(t)
 	up = None
@@ -56,33 +56,33 @@ def triangleSawtooth(params:SynthParameters=None, frequency:float=440, amplitude
 	return np.where(t < risingTime, up, down)
 	
 @registerFunction
-def step(params:SynthParameters=None, stepTime:float=0.5, fromValue:float=0.0, toValue:float=1.0):
+def step(params:SynthParameters=None, stepTime:StreamOrProperty(float)=0.5, fromValue:StreamOrProperty(float)=0.0, toValue:StreamOrProperty(float)=1.0):
 	t = np.linspace(0.0, params.length, params.samples)
 	return np.where(t < stepTime, fromValue, toValue)
 	
 @registerFunction	
-def linear(params:SynthParameters=None, startTime:float=0.0, startValue:float=0.0, endTime:float=1.0, endValue:float=1.0):
+def linear(params:SynthParameters=None, startTime:StreamOrProperty(float)=0.0, startValue:StreamOrProperty(float)=0.0, endTime:StreamOrProperty(float)=1.0, endValue:StreamOrProperty(float)=1.0):
 	t = np.linspace(0.0, params.length, params.samples)
 	slope = (endValue - startValue) / (endTime - startTime)
 	return np.clip(startValue-startTime*slope + slope*t, min(startValue, endValue), max(startValue, endValue))
 	
 @registerFunction
-def delay(params:SynthParameters=None, signal:np.ndarray=0.0, delayTime:float=0.1):
+def delay(params:SynthParameters=None, signal:StreamOnly(np.ndarray)=0.0, delayTime:StreamOrProperty(float)=0.1):
 	zeroLen = int(delayTime * params.sampleRate)
 	return np.append(np.zeros(zeroLen), signal[zeroLen:params.samples])
 	
 @registerFunction
-def constant(params:SynthParameters=None, constant:float=1.0):
-	ret = np.ndarray(params.samples)
+def constant(params:SynthParameters=None, constant:StreamOrProperty(float)=1.0):
+	ret = StreamOnly(np.ndarray)(params.samples)
 	ret.fill(constant)
 	return ret
 	
 @registerFunction
-def add(signalA:np.ndarray=0.0, signalB:np.ndarray=0.0):
+def add(signalA:StreamOnly(np.ndarray)=0.0, signalB:StreamOnly(np.ndarray)=0.0):
 	return signalA + signalB
 	
 @registerFunction
-def fromWaveFile(params:SynthParameters=None, filename:str="testIn.wav", amplitude:float=1.0):
+def fromWaveFile(params:SynthParameters=None, filename:str="testIn.wav", amplitude:StreamOrProperty(float)=1.0):
 	with wave.open(filename) as file:
 		if file.getnchannels() != 1:
 			raise SynthException("Only files with one channel are supported.")
@@ -97,7 +97,7 @@ def fromWaveFile(params:SynthParameters=None, filename:str="testIn.wav", amplitu
 				raise SynthException("Only samplewidths of 1, 2 or 4 bytes are supported.")
 			else:
 				maxValue = 2**(sampWidth*8 - 1) - 1
-				data = np.fromstring(frames, dtype = sampTypes[sampWidth]).astype(float) / maxValue
+				data = np.fromstring(frames, dtype = sampTypes[sampWidth]).astype(StreamOrProperty(float)) / maxValue
 				if n > params.samples:
 					data = data[:params.samples]
 				elif n < params.samples:

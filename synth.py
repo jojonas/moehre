@@ -16,7 +16,7 @@ class SynthException(Exception):
 	pass
 	
 @registerOutputFunction # potential parameters: envelope, looping (ping-pong, forward)
-def Output(synthParameters:SynthParameters=None, input:np.ndarray=0.0, sampleRate:int=44100, length:float=2.0, playbackSpeedFactor:float=1.0):
+def Output(synthParameters:SynthParameters=None, input:StreamOnly(np.ndarray)=0.0, sampleRate:PropertyOnly(int)=44100, length:PropertyOnly(float)=2.0, playbackSpeedFactor:PropertyOnly(float)=1.0):
 	return input
 	
 class Synthesizer:
