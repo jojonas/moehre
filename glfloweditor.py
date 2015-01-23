@@ -165,7 +165,7 @@ class FlowConnection(QtCore.QObject):
 		glLineWidth(FlowConnection.width)
 
 		# Bezier Curve
-		velocity = 100 # "roundness"
+		velocity = 0.5 * math.sqrt((endX-startX)*(endX-startX) + (endY-startY)*(endY-startY))
 		segments = 20
 		glBegin(GL_LINE_STRIP)
 		for segment in range(segments+1):
@@ -465,7 +465,51 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 					self.selectNode(None)
 		
 	def loadGraph(self, filename):
-		pass
+		def getKnobByName(node, knobName):
+			for knob in node.knobs:
+				if knob.name == knobName:
+					return knob
+			raise NameError("Knob '" + knobName + "' not present on node '" + node.func.__name__ + "'.")
+	
+		self.nodes = []
+		self.connections = []
+		self.selectedNode = None
+	
+		with open(filename) as file:
+			jsonDict = json.load(file)
+			
+		nodeIDDict = {}
+		for nodeDict in jsonDict["nodes"]:
+			# find function
+			func = None
+			funcs = getRegisteredFunctions()
+			for f in funcs:
+				if f.__name__ == nodeDict["name"]:
+					func = f
+			if not func:
+				raise NotImplementedError("'".join("Function of node ", nodeDict["name"], " is not implemented."))
+			else:
+				self.addNode(func, nodeDict["x"], nodeDict["y"])
+				node = self.nodes[-1]
+				nodeIDDict[int(nodeDict["id"])] = node
+				for propDict in nodeDict["properties"]:
+					if propDict["name"] in node.properties:
+						prop = node.properties[propDict["name"]]
+						if propDict["type"] == prop.type.__name__:
+							if prop.hasEditable:
+								node.properties[propDict["name"]] = prop._replace(value = propDict["value"])
+						else:
+							raise TypeError("'".join("Property ", propDict["name"], " is of type ", prop.type.__name__, " instead of ", propDict["type"], "."))
+					else:
+						raise NameError("'".join("Property ", propDict["name"], " missing in node ", nodeDict["name"], "."))
+		
+		for connDict in jsonDict["connections"]:
+			if connDict["outputNodeID"] in nodeIDDict and connDict["inputNodeID"] in nodeIDDict:
+				inputKnob = getKnobByName(nodeIDDict[connDict["inputNodeID"]], connDict["inputKnobName"])
+				outputKnob = getKnobByName(nodeIDDict[connDict["outputNodeID"]], connDict["outputKnobName"])
+				self.addConnection(FlowConnection(inputKnob, outputKnob, parent = self))
+			else:
+				raise IndexError("Connecting nodes with unused IDs (" + str(connDict["outputNodeID"]) + ", " + str(connDict["inputNodeID"]) + ").")
 			
 		
 	def saveGraph(self, filename):
