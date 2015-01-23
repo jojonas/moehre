@@ -265,6 +265,8 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 			self.startY = startY
 			self.draggable = draggable
 			self.custom = None
+			self.x = startX
+			self.y = startY
 			self.draggable.startDrag(self)
 			
 		def update(self, currentX, currentY):
@@ -424,6 +426,7 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 				for connection in connections:
 					self.connections.remove(connection)
 					del connection
+				self.updateGL()
 				
 	
 	def contextMenuEvent(self, event):
@@ -434,7 +437,7 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 		if node:
 			action = menu.addAction("Delete node")
 			action.triggered.connect(functools.partial(self.deleteNode, node))
-		else:	
+		elif self.pickKnob(x,y) is None:
 			for i, func in enumerate(self.functions):
 				if func not in self.outputFunctions:
 					action = menu.addAction(camelCaseToWords(func.__name__))
