@@ -457,13 +457,15 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 			self.updateGL()
 	
 	def keyPressEvent(self, event):
-		if event.matches(QtGui.QKeySequence.Delete):
-			if self.selectedNode:
-				if self.selectedNode.isOutput():
-					QtWidgets.QMessageBox.warning(self.parent(), "Delete Node", "Cannot delete output node.", QtWidgets.QMessageBox.Ok)
-				elif QtWidgets.QMessageBox.question(self.parent(), "Delete Node", "Do you really want to delete this node?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes:
-					self.deleteNode(self.selectedNode)		
-					self.selectNode(None)
+		self.parent().keyPressEvent(event)
+			
+	def dialogDeleteNode(self):
+		if self.selectedNode:
+			if self.selectedNode.isOutput():
+				QtWidgets.QMessageBox.warning(self.parent(), "Delete Node", "Cannot delete output node.", QtWidgets.QMessageBox.Ok)
+			elif QtWidgets.QMessageBox.question(self.parent(), "Delete Node", "Do you really want to delete this node?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes:
+				self.deleteNode(self.selectedNode)		
+				self.selectNode(None)
 		
 	def loadGraph(self, filename):
 		def getKnobByName(node, knobName):

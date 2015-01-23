@@ -72,11 +72,36 @@ class Synthesizer:
 			scaled = np.int16(clamped*32767)
 			file.writeframesraw(scaled.tobytes()) # normal writeframes doesn't work even though written frames and nframes are equal?
 	
-	def play(self, flowGraph):
+	def play(self, flowGraph, additionalSpeedModifier=1.0):
 		self.synthesizeFromFlowGraph(flowGraph)
 		xUnscaled = np.linspace(0, self.synthParameters.length, self.synthParameters.samples)
-		xScaled = np.linspace(0, self.synthParameters.length, self.synthParameters.samples / self.playbackSpeedFactor)
+		xScaled = np.linspace(0, self.synthParameters.length, self.synthParameters.samples / (self.playbackSpeedFactor*additionalSpeedModifier))
 		interpolator = interp1d(xUnscaled, self.soundBuffer)
 		playbackBuffer = interpolator(xScaled)
 		audio.play(playbackBuffer, self.synthParameters.sampleRate)
-		pass
+		
+	@staticmethod
+	def noteToMultiplier(note):
+		assert 2 <= len(note) <= 3, "Note format not understood"
+		baseNotes = "cdefgab"
+		modifiers = "b#"
+		
+		base = note[0].lower()
+		if len(note) == 2:
+			modifier = " "
+		elif len(note) == 3:
+			modifier = note[1]
+		octave = int(note[-1])
+	
+		assert base and base in "cdefgab", "Illegal note"
+		assert modifier in "b #", "Illegal note modifier"
+		assert 0 <= octave <= 8, "Octave out of range"
+		
+		n = octave*12 + ("c d ef g a b".index(base)) + ("b #".index(modifier)-1) - 8
+		factor = 2**((n-49)/12)
+		return factor
+
+	def playNote(self, flowGraph, note):
+		factor = self.noteToMultiplier(note)
+		self.play(flowGraph, additionalSpeedModifier=factor)
+	

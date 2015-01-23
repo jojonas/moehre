@@ -8,6 +8,7 @@ from PyQt5 import QtCore, QtWidgets, QtGui, uic
 from glfloweditor import *
 from propertyeditor import *
 from synth import *
+from keymap import getKeyMap
 
 from nodes import *
 import audio
@@ -19,6 +20,7 @@ class MainWindow(form,base):
 		self.setupUi(self)
 		
 		self.setWindowTitle("Möhre")
+		self.setFocusPolicy(QtCore.Qt.StrongFocus)
 		
 		self.actionPlay.setIcon(self.style().standardIcon(QtWidgets.QStyle.SP_MediaPlay))
 		self.actionPlay.triggered.connect(self.play)
@@ -70,8 +72,18 @@ class MainWindow(form,base):
 		self.statusBar.showMessage(shortMessage)
 		
 	def keyPressEvent(self, event):
-		self.glFlowEditor.keyPressEvent(event)
-		
+		if event.matches(QtGui.QKeySequence.Delete):
+			print("FOCUS", QtWidgets.QApplication.focusWidget())
+			self.glFlowEditor.dialogDeleteNode()
+			return
+		elif not event.isAutoRepeat():
+			keyMap = getKeyMap()
+			if event.nativeScanCode() in keyMap:
+				note = keyMap[event.nativeScanCode()]
+				self.synthesizer.playNote(self.glFlowEditor, note)
+				return
+		QtWidgets.QWidget.keyPressEvent(self, event)
+			
 class QtLoggingHandler(QtCore.QObject):
 	signalHandleError = QtCore.pyqtSignal([str, str])
 	
