@@ -49,17 +49,17 @@ class MainWindow(form,base):
 		self.synthesizer.play(self.glFlowEditor)
 	
 	def export(self):
-		fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Export to file", filter="wave files (*.wav *.wave);;All files (*.*)")
+		fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Export to file", filter="wave files (*.wav);;All files (*.*)")
 		if fileName:
 			self.synthesizer.saveToFile(self.glFlowEditor, fileName)
 			
 	def save(self):
-		fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save to file", filter="Flow Graph files (*.graph);;All files (*.*)")
+		fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save to file", filter="Möhre Flow Graph (*.mfg);;All files (*.*)")
 		if fileName:
 			self.glFlowEditor.saveGraph(fileName)
 			
 	def open(self):
-		fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open file", filter="Flow Graph files (*.graph);;All files (*.*)")
+		fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open file", filter="Möhre Flow Graph (*.mfg);;All files (*.*)")
 		if fileName:
 			self.glFlowEditor.loadGraph(fileName)
 		
