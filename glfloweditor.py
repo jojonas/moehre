@@ -2,6 +2,7 @@ from collections import namedtuple, OrderedDict
 import math
 import inspect
 import functools
+import json
 
 from PyQt5 import QtOpenGL, QtGui, QtCore, QtWidgets, Qt
 from OpenGL.GL import *
@@ -462,6 +463,47 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 				elif QtWidgets.QMessageBox.question(self.parent(), "Delete Node", "Do you really want to delete this node?", QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No) == QtWidgets.QMessageBox.Yes:
 					self.deleteNode(self.selectedNode)		
 					self.selectNode(None)
+		
+	def loadGraph(self, filename):
+		pass
+			
+		
+	def saveGraph(self, filename):
+		jsonDict = {}
+		jsonDict["nodes"] = []
+		id = 0
+		for node in self.nodes:
+			nodeDict = {}
+			id += 1
+			node._exportTempID = id
+			nodeDict["id"] = id
+			nodeDict["name"] = node.func.__name__
+			nodeDict["x"] = node.x
+			nodeDict["y"] = node.y
+			
+			nodeDict["properties"] = []
+			for n, prop in node.properties.items():
+				propDict = {}
+				propDict["name"] = prop.name
+				propDict["type"] = prop.type.__name__
+				propDict["value"] = prop.value
+				nodeDict["properties"].append(propDict)
+			
+			jsonDict["nodes"].append(nodeDict)
+			
+		jsonDict["connections"] = []
+		for conn in self.connections:
+			connDict = {}
+			connDict["outputNodeID"] = conn.outputKnob.node._exportTempID
+			connDict["outputKnobName"] = conn.outputKnob.name
+			connDict["inputNodeID"] = conn.inputKnob.node._exportTempID
+			connDict["inputKnobName"] = conn.inputKnob.name
+			
+			jsonDict["connections"].append(connDict)
+		
+		with open(filename, "w") as file:
+			json.dump(jsonDict, file)
+					
 							
 						
 						

@@ -51,19 +51,16 @@ class MainWindow(form,base):
 		fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Export to file", filter="wave files (*.wav *.wave);;All files (*.*)")
 		if fileName:
 			self.synthesizer.saveToFile(self.glFlowEditor, fileName)
-			self.statusBar.showMessage("Export complete.")
 			
 	def save(self):
 		fileName, _ = QtWidgets.QFileDialog.getSaveFileName(self, "Save to file", filter="Flow Graph files (*.graph);;All files (*.*)")
 		if fileName:
-			# save to file
-			pass
+			self.glFlowEditor.saveGraph(fileName)
 			
 	def open(self):
 		fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open file", filter="Flow Graph files (*.graph);;All files (*.*)")
 		if fileName:
-			# load file
-			pass
+			self.glFlowEditor.loadGraph(fileName)
 		
 	def handleError(self, shortMessage, longMessage):
 		self.statusBar.showMessage(shortMessage)
