@@ -61,7 +61,10 @@ class MainWindow(form,base):
 	def open(self):
 		fileName, _ = QtWidgets.QFileDialog.getOpenFileName(self, "Open file", filter="Möhre Flow Graph (*.mfg);;All files (*.*)")
 		if fileName:
-			self.glFlowEditor.loadGraph(fileName)
+			self.openFile(fileName)
+			
+	def openFile(self, fileName): # for command line passing
+		self.glFlowEditor.loadGraph(fileName)
 		
 	def handleError(self, shortMessage, longMessage):
 		self.statusBar.showMessage(shortMessage)
@@ -96,6 +99,8 @@ if __name__=="__main__":
 		app.setWindowIcon(QtGui.QIcon(logo))
 		window = MainWindow()
 		handler.signalHandleError.connect(window.handleError)
+		if len(sys.argv) > 1:
+			window.openFile(sys.argv[1])
 		window.show()
 		sys.exit(app.exec_())
 	
