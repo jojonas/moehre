@@ -78,5 +78,5 @@ class Synthesizer:
 		xScaled = np.linspace(0, self.synthParameters.length, self.synthParameters.samples * self.playbackSpeedFactor)
 		interpolator = interp1d(xUnscaled, self.soundBuffer)
 		playbackBuffer = interpolator(xScaled)
-		audio.play(playbackBuffer)
+		audio.play(playbackBuffer, self.synthParameters.sampleRate)
 		pass

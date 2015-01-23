@@ -43,7 +43,7 @@ class MainWindow(form,base):
 		self.setCentralWidget(self.glFlowEditor)
 		
 		self.synthesizer = Synthesizer()
-		audio.reinitAudio(44100)
+		audio.initAudio()
 		
 	def play(self):
 		self.synthesizer.play(self.glFlowEditor)
