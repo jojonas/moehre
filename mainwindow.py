@@ -1,6 +1,7 @@
 import sys
 import traceback
 import contextlib
+import os, os.path
 
 from PyQt5 import QtCore, QtWidgets, QtGui, uic
 
@@ -91,6 +92,8 @@ if __name__=="__main__":
 	handler = QtLoggingHandler()
 	with excepthook(handler):
 		app = QtWidgets.QApplication(sys.argv)
+		logo = os.path.join(os.path.dirname(os.path.realpath(__file__)), "logo.svg")
+		app.setWindowIcon(QtGui.QIcon(logo))
 		window = MainWindow()
 		handler.signalHandleError.connect(window.handleError)
 		window.show()
