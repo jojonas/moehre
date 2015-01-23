@@ -36,6 +36,9 @@
    <property name="features">
     <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
    </property>
+   <property name="windowTitle">
+    <string>Node Properties</string>
+   </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
