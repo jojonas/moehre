@@ -500,7 +500,7 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 							if prop.hasEditable:
 								node.properties[propDict["name"]] = prop._replace(value = propDict["value"])
 						else:
-							raise TypeError("'".join("Property ", propDict["name"], " is of type ", prop.type.__name__, " instead of ", propDict["type"], "."))
+							raise TypeError("'".join(["Property ", propDict["name"], " is of type ", prop.type.type.__name__, " instead of ", propDict["type"], "."]))
 					else:
 						raise NameError("'".join("Property ", propDict["name"], " missing in node ", nodeDict["name"], "."))
 		
@@ -548,7 +548,7 @@ class GLFlowEditor(QtOpenGL.QGLWidget):
 			jsonDict["connections"].append(connDict)
 		
 		with open(filename, "w") as file:
-			json.dump(jsonDict, file)
+			json.dump(jsonDict, file, indent = 4, sort_keys = True)
 					
 							
 						
