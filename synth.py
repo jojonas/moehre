@@ -75,7 +75,7 @@ class Synthesizer:
 	def play(self, flowGraph):
 		self.synthesizeFromFlowGraph(flowGraph)
 		xUnscaled = np.linspace(0, self.synthParameters.length, self.synthParameters.samples)
-		xScaled = np.linspace(0, self.synthParameters.length, self.synthParameters.samples * self.playbackSpeedFactor)
+		xScaled = np.linspace(0, self.synthParameters.length, self.synthParameters.samples / self.playbackSpeedFactor)
 		interpolator = interp1d(xUnscaled, self.soundBuffer)
 		playbackBuffer = interpolator(xScaled)
 		audio.play(playbackBuffer, self.synthParameters.sampleRate)
