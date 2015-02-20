@@ -108,6 +108,10 @@ def add(signalA:StreamOnly(np.ndarray)=0.0, signalB:StreamOnly(np.ndarray)=0.0):
 	return signalA + signalB
 	
 @registerFunction
+def multiply(signalA:StreamOnly(np.ndarray)=0.0, signalB:StreamOnly(np.ndarray)=0.0):
+	return signalA * signalB
+	
+@registerFunction
 def clamp(channel:StreamOnly(np.ndarray)=0.0, level:StreamOrProperty(float)=1.0):
 	return np.clip(channel, -level, level)
 	
