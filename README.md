@@ -21,4 +21,5 @@ Start `mainwindow.py` using python: `python mainwindow.py`. The window consist o
 It has only been tested yet using Windows, although it should generally be platform-indpendent and as such work on Linux and Mac OS X, too.
 
 ## License
-This project is released under MIT license.
+This project is released under MIT license. 
+Copyright (c) 2015 Jonas Lieb, Joel Schumacher.
