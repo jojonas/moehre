@@ -19,7 +19,7 @@ Start `mainwindow.py` using python: `python mainwindow.py`. The window consist o
 * [SciPy](http://www.scipy.org/scipylib/download.html)
 
 ## Platforms
-It has only been tested yet using Windows, although it should generally be platform-indpendent and as such work on Linux and Mac OS X, too.
+It has only been tested yet using Windows, although it should generally be platform-independent and as such work on Linux and Mac OS X, too.
 
 ## License
 This project is released under MIT license. 
